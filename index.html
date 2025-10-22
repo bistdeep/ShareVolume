@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarMax - Common Stock Shares Outstanding</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        .data { margin-top: 20px; }
+        .data div { margin: 10px 0; }
+        .max { color: green; font-weight: bold; }
+        .min { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1 id='share-entity-name'>CarMax</h1>
+    <div class='data'>
+        <div>Max Shares Outstanding: <span id='share-max-value'></span> (FY: <span id='share-max-fy'></span>)</div>
+        <div>Min Shares Outstanding: <span id='share-min-value'></span> (FY: <span id='share-min-fy'></span>)</div>
+    </div>
+    <script>
+        async function fetchData(cik) {
+            const response = await fetch(`https://data.sec.gov/api/xbrl/companyconcept/CIK${cik}/dei/EntityCommonStockSharesOutstanding.json`, {
+                headers: { 'User-Agent': 'Your-Name-Here' }
+            });
+            const data = await response.json();
+            return data;
+        }
+
+        async function updateData(cik) {
+            const data = await fetchData(cik);
+            const entityName = data.entityName;
+            const shares = data.units.shares.filter(entry => entry.fy > '2020' && !isNaN(entry.val));
+
+            const max = shares.reduce((prev, current) => (prev.val > current.val) ? prev : current);
+            const min = shares.reduce((prev, current) => (prev.val < current.val) ? prev : current);
+
+            document.getElementById('share-entity-name').innerText = entityName;
+            document.getElementById('share-max-value').innerText = max.val;
+            document.getElementById('share-max-fy').innerText = max.fy;
+            document.getElementById('share-min-value').innerText = min.val;
+            document.getElementById('share-min-fy').innerText = min.fy;
+
+            document.title = entityName + ' - Common Stock Shares Outstanding';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const cik = urlParams.get('CIK') || '0001170010';
+        updateData(cik);
+    </script>
+</body>
+</html>
